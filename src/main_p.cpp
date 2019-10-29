@@ -39,6 +39,7 @@ using namespace std;
 #include "./CFixPointConversion/CFastFixConversion.h"
 #include "./CChanel/ChanelLibrary.h"
 #include "./CTools/CTools.h"
+#include "./CBitGenerator/CBitGenerator.h"
 
 struct param_decoder {
     float oms_offset_float;
@@ -393,6 +394,12 @@ int main(int argc, char* argv[]) {
         noise[i]->setNormalize( p_simulation.norm_channel );
     }
 
+    CBitGenerator* generator[MAX_THREADS];
+    for(int i=0; i<4; i++)
+    {
+        generator[i] = new CBitGenerator(simu_data[i], false);
+    }
+
     //
     // ON CREE L'OBJET EN CHARGE DE LA CONVERSION EN VIRGULE FIXE DE L'INFORMATION DU CANAL
     //
@@ -426,6 +433,10 @@ int main(int argc, char* argv[]) {
         }
 
         // ON GENERE LA PREMIERE TRAME BRUITEE
+        for(int i=0; i<4; i++){
+            generator[i]->generate();
+        }
+
         for(int i=0; i<4; i++){
             encoder[i]->encode();
         }
@@ -482,6 +493,18 @@ int main(int argc, char* argv[]) {
                         decoder[0]->decode(f_llr, o_llr, NOMBRE_ITERATIONS);
                         decoder[0]->decode(i_llr, o_llr, NOMBRE_ITERATIONS);
                         timer[0].stop();
+
+                        int  *in_bits = simu_data[0]->get_t_in_bits();
+                        printf("%p %p %p %p\n", f_llr, i_llr, o_llr, in_bits);
+                        for(uint32_t ii=0; ii<30; ii++)
+                        {
+                            printf("f_llr %0.5f i_llr %4d o_llr %4d in_bits %2d\n",
+                                    f_llr[ii],
+                                    i_llr[ii],
+                                    o_llr[ii],
+                                    in_bits[ii]);
+                        }
+
                         etime[0] += (timer[0].get_time_us() - biais);
 //                        printf("show = %d\n", timer[0].get_time_us());
 
